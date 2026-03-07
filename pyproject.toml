@@ -1,0 +1,25 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "pydantic-ai-apcore"
+version = "0.1.0"
+description = "Expose apcore modules as pydantic-ai tools"
+requires-python = ">=3.10"
+dependencies = [
+    "apcore>=0.7.0",
+    "pydantic-ai-slim>=0.2.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.24",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/pydantic_ai_apcore"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
