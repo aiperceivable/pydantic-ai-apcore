@@ -1,0 +1,14 @@
+# Access-control rules for the pydantic-ai-apcore scanner demo.
+#
+# Loaded by app.py via APCORE_ACL_PATH. These rules target modules that began
+# life as ordinary pydantic-ai tools -- once registered, they are governed like
+# any hand-written module, which is the point of the demo.
+default_effect: deny
+
+rules:
+  - description: Ops agents may invoice, refund, and look up
+    callers: ["agent.*"]
+    targets: ["billing.send_invoice", "billing.refund", "billing.lookup"]
+    effect: allow
+
+  # billing.wire_transfer is deliberately absent -> default_effect: deny.

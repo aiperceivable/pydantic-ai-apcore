@@ -1,0 +1,32 @@
+# Access-control rules for the pydantic-ai-apcore ACL demo.
+#
+# Loaded by app.py via APCORE_ACL_PATH and enforced by the Executor on every
+# module call. Rules are evaluated first-match-wins; a call that matches no
+# rule falls through to `default_effect`.
+#
+# Contract (apcore.acl.ACL):
+#   callers     - list of caller-id glob patterns ("*" = any caller)
+#   targets     - list of module-id glob patterns  ("*" = any module)
+#   effect      - "allow" | "deny"
+#   conditions  - optional; supports `roles`, `identity_types`, `max_call_depth`
+#
+# `callers` is matched against Context.call_chain[-1] and `conditions.roles`
+# against the Context Identity. ApcoreToolset populates both from the identity
+# it resolves, so a rule keyed on a caller pattern matches as written.
+default_effect: deny
+
+rules:
+  - description: Any agent may read a CRM record
+    callers: ["agent.*"]
+    targets: ["crm.read"]
+    effect: allow
+
+  - description: Only data-admin agents may delete one
+    callers: ["agent.*"]
+    targets: ["crm.delete"]
+    effect: allow
+    conditions:
+      roles: ["data_admin"]
+
+  # Everything else (e.g. crm.delete by a reader agent) falls through to
+  # default_effect: deny -> the Executor raises ACLDeniedError.

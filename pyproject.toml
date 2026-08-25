@@ -8,11 +8,15 @@ version = "0.1.0"
 description = "Expose apcore modules as pydantic-ai tools"
 requires-python = ">=3.10"
 dependencies = [
-    "apcore>=0.9.0",
-    "pydantic-ai-slim>=0.2.0",
+    "apcore>=0.26.0",
+    "apcore-toolkit>=0.10.0",
+    "pydantic-ai-slim>=1.32.0",
 ]
 
 [project.optional-dependencies]
+mcp = ["apcore-mcp>=0.17.2"]
+cli = ["apcore-cli>=0.10.3"]
+all = ["pydantic-ai-apcore[mcp,cli]"]
 dev = [
     "apdev[dev]>=0.2.1",
     "pytest>=8.0",
@@ -26,10 +30,10 @@ packages = ["src/pydantic_ai_apcore"]
 asyncio_mode = "auto"
 
 [project.urls]
-Homepage = "https://aipartnerup.com"
-Repository = "https://github.com/aipartnerup/pydantic-ai-apcore"
-Documentation = "https://github.com/aipartnerup/pydantic-ai-apcore#readme"
-Issues = "https://github.com/aipartnerup/pydantic-ai-apcore/issues"
+Homepage = "https://aiperceivable.com"
+Repository = "https://github.com/aiperceivable/pydantic-ai-apcore"
+Documentation = "https://github.com/aiperceivable/pydantic-ai-apcore#readme"
+Issues = "https://github.com/aiperceivable/pydantic-ai-apcore/issues"
 
 [tool.apdev]
 base_package = "pydantic_ai_apcore"

@@ -1,0 +1,15 @@
+# Access-control rules for the pydantic-ai-apcore approval demo.
+#
+# Loaded by app.py via APCORE_ACL_PATH. Kept permissive on purpose: this demo
+# is about the two approval checkpoints, and an ACL denial would stop a call
+# before the approval gate ever runs (the ACL check comes first in the
+# pipeline). See acl_demo for the ACL itself.
+default_effect: deny
+
+rules:
+  - description: Ops agents may call any CRM module; approval still applies
+    callers: ["agent.*"]
+    targets: ["crm.*"]
+    effect: allow
+    conditions:
+      roles: ["data_admin"]
