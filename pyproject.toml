@@ -5,8 +5,29 @@ build-backend = "hatchling.build"
 [project]
 name = "pydantic-ai-apcore"
 version = "0.1.0"
-description = "Expose apcore modules as pydantic-ai tools"
+description = "apcore integration for pydantic-ai: governed modules as agent tools, and agent tools as governed modules"
 requires-python = ">=3.10"
+readme = "README.md"
+license = "Apache-2.0"
+authors = [
+    { name = "aiperceivable", email = "team@aiperceivable.com" },
+]
+keywords = [
+    "pydantic-ai",
+    "apcore",
+    "agent",
+    "ai-agent",
+    "llm",
+    "tools",
+    "tool-use",
+    "toolset",
+    "mcp",
+    "governance",
+    "access-control",
+    "human-in-the-loop",
+    "scanner",
+    "integration",
+]
 dependencies = [
     "apcore>=0.26.0",
     "apcore-toolkit>=0.10.0",
