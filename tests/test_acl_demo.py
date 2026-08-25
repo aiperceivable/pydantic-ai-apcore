@@ -31,9 +31,7 @@ def demo(monkeypatch: pytest.MonkeyPatch):
     )
 
     client = create_demo_client()
-    toolset = ApcoreToolset(
-        client.registry, client.executor, identity_resolver=identity_from_deps
-    )
+    toolset = ApcoreToolset(client.registry, client.executor, identity_resolver=identity_from_deps)
     return toolset
 
 

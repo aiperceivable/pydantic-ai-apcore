@@ -64,9 +64,7 @@ def create_demo_client() -> APCore:
     client.executor.set_acl(ACL.load(os.environ["APCORE_ACL_PATH"]))
 
     async def review(request: ApprovalRequest) -> ApprovalResult:
-        caller = (
-            request.context.identity.id if request.context.identity else "anonymous"
-        )
+        caller = request.context.identity.id if request.context.identity else "anonymous"
         apcore_gate_log.append(caller)
         return ApprovalResult(status="approved", approved_by="policy-gate")
 
@@ -99,9 +97,7 @@ def main() -> None:
     toolset: ApcoreToolset = ApcoreToolset(
         client.registry,
         client.executor,
-        identity_resolver=lambda ctx: Identity(
-            id=ctx.deps.caller_id, type="ai", roles=ctx.deps.roles
-        ),
+        identity_resolver=lambda ctx: Identity(id=ctx.deps.caller_id, type="ai", roles=ctx.deps.roles),
     )
     ops = AgentIdentity(caller_id="agent.ops", roles=("data_admin",))
 

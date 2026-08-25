@@ -31,9 +31,7 @@ def scanned(monkeypatch: pytest.MonkeyPatch):
     from pydantic_ai_apcore import register_toolset
 
     registry = Registry()
-    result = register_toolset(
-        build_billing_tools("USD"), registry, prefix="billing.", tags=["billing"]
-    )
+    result = register_toolset(build_billing_tools("USD"), registry, prefix="billing.", tags=["billing"])
     return result, build_executor(registry)
 
 
@@ -61,13 +59,7 @@ def test_context_taking_tool_is_skipped_with_a_reason(scanned) -> None:
 def test_undocumented_parameters_are_flagged(scanned) -> None:
     result, _ = scanned
 
-    gaps = [
-        w
-        for m in result.modules
-        if m.module_id == "billing.lookup"
-        for w in m.warnings
-        if "no description" in w
-    ]
+    gaps = [w for m in result.modules if m.module_id == "billing.lookup" for w in m.warnings if "no description" in w]
     assert gaps and "q" in gaps[0] and "limit" in gaps[0]
 
 

@@ -106,9 +106,7 @@ def run_as(toolset: ApcoreToolset, deps: AgentIdentity, tool: str, args: dict) -
 
 def main() -> None:
     client = create_demo_client()
-    toolset: ApcoreToolset = ApcoreToolset(
-        client.registry, client.executor, identity_resolver=identity_from_deps
-    )
+    toolset: ApcoreToolset = ApcoreToolset(client.registry, client.executor, identity_resolver=identity_from_deps)
 
     analyst = AgentIdentity(caller_id="agent.research", roles=("reader",))
     admin = AgentIdentity(caller_id="agent.ops", roles=("data_admin",))

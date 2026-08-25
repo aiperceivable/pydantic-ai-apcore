@@ -210,9 +210,7 @@ class _CapturingExecutor:
     def __init__(self) -> None:
         self.calls: list[tuple[str, dict[str, Any], Context]] = []
 
-    async def call_async(
-        self, module_id: str, inputs: dict[str, Any], context: Context
-    ) -> dict[str, Any]:
+    async def call_async(self, module_id: str, inputs: dict[str, Any], context: Context) -> dict[str, Any]:
         self.calls.append((module_id, inputs, context))
         return {"ok": True}
 
@@ -261,9 +259,7 @@ class TestIdentityResolution:
     async def test_resolver_takes_precedence_over_static_identity(self) -> None:
         static = Identity(id="fallback", type="ai")
         resolved = Identity(id="agent.research", type="ai", roles=("reader",))
-        ts, executor = _toolset_with_capture(
-            identity=static, identity_resolver=lambda ctx: resolved
-        )
+        ts, executor = _toolset_with_capture(identity=static, identity_resolver=lambda ctx: resolved)
 
         await _call_once(ts, MagicMock())
 
@@ -274,9 +270,7 @@ class TestIdentityResolution:
     @pytest.mark.asyncio
     async def test_resolver_returning_none_falls_back_to_static(self) -> None:
         static = Identity(id="fallback", type="ai")
-        ts, executor = _toolset_with_capture(
-            identity=static, identity_resolver=lambda ctx: None
-        )
+        ts, executor = _toolset_with_capture(identity=static, identity_resolver=lambda ctx: None)
 
         await _call_once(ts, MagicMock())
 
@@ -286,9 +280,7 @@ class TestIdentityResolution:
 
     @pytest.mark.asyncio
     async def test_resolver_reads_run_context_deps(self) -> None:
-        ts, executor = _toolset_with_capture(
-            identity_resolver=lambda ctx: Identity(id=ctx.deps.caller, type="ai")
-        )
+        ts, executor = _toolset_with_capture(identity_resolver=lambda ctx: Identity(id=ctx.deps.caller, type="ai"))
 
         ctx = MagicMock()
         ctx.deps.caller = "agent.from_deps"
@@ -600,13 +592,9 @@ class TestScannerMetadataPipeline:
                 return modules
 
         registry = Registry()
-        register_toolset(
-            self._closure_toolset(1.5), registry, enhancers=[FillDescription()]
-        )
+        register_toolset(self._closure_toolset(1.5), registry, enhancers=[FillDescription()])
 
-        assert registry.get_definition("undocumented").description == (
-            "Filled by enhancer"
-        )
+        assert registry.get_definition("undocumented").description == ("Filled by enhancer")
 
     def test_scanner_reports_its_source(self) -> None:
         from pydantic_ai_apcore import PydanticAIScanner

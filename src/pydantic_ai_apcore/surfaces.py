@@ -15,10 +15,7 @@ from typing import Any
 
 __all__ = ["serve_cli", "serve_mcp"]
 
-_MISSING = (
-    "{surface} support requires the '{extra}' extra:\n"
-    '    pip install "pydantic-ai-apcore[{extra}]"'
-)
+_MISSING = "{surface} support requires the '{extra}' extra:\n    pip install \"pydantic-ai-apcore[{extra}]\""
 
 
 def serve_mcp(registry_or_executor: Any, **kwargs: Any) -> Any:
@@ -56,7 +53,4 @@ def serve_cli(registry_or_executor: Any, **kwargs: Any) -> Any:
         if callable(candidate):
             return candidate(registry_or_executor, **kwargs)
 
-    raise RuntimeError(
-        "apcore-cli is installed but exposes no recognised entry point; "
-        "call it directly instead."
-    )
+    raise RuntimeError("apcore-cli is installed but exposes no recognised entry point; call it directly instead.")

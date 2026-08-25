@@ -102,9 +102,7 @@ def build_executor(registry: Registry) -> Executor:
 
 def main() -> None:
     registry = Registry()
-    result = register_toolset(
-        build_billing_tools("USD"), registry, prefix="billing.", tags=["billing"]
-    )
+    result = register_toolset(build_billing_tools("USD"), registry, prefix="billing.", tags=["billing"])
 
     print("Registered")
     print("-" * 74)
@@ -116,9 +114,7 @@ def main() -> None:
 
     print("What the scan flagged")
     print("-" * 74)
-    unimportable = [
-        m for m in result.modules if any("not importable" in w for w in m.warnings)
-    ]
+    unimportable = [m for m in result.modules if any("not importable" in w for w in m.warnings)]
     if unimportable:
         # One line rather than one per tool: every closure trips this, and on a
         # real toolset it would bury the warnings that need action.
@@ -148,15 +144,11 @@ def main() -> None:
 
     print(
         "  allowed by ACL    :",
-        call_as(
-            "agent.ops", "billing.send_invoice", {"customer_id": "C-7", "amount": 42.0}
-        ),
+        call_as("agent.ops", "billing.send_invoice", {"customer_id": "C-7", "amount": 42.0}),
     )
     print(
         "  blocked by ACL    :",
-        call_as(
-            "agent.ops", "billing.wire_transfer", {"account": "X-1", "amount": 9000.0}
-        ),
+        call_as("agent.ops", "billing.wire_transfer", {"account": "X-1", "amount": 9000.0}),
     )
     # The ACL runs before the approval gate, so a tool has to pass the ACL first
     # for its requires_approval annotation to matter at all.
@@ -166,9 +158,7 @@ def main() -> None:
     )
     print(
         "  approval granted  :",
-        call_as(
-            "agent.ops", "billing.refund", {"payment_id": "P-1", "confirmed": True}
-        ),
+        call_as("agent.ops", "billing.refund", {"payment_id": "P-1", "confirmed": True}),
     )
     print()
 

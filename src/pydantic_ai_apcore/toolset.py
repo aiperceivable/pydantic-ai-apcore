@@ -68,8 +68,7 @@ class ApcoreToolset(AbstractToolset[AgentDepsT]):
         executor: Executor,
         *,
         identity: Identity | None = None,
-        identity_resolver: Callable[[RunContext[AgentDepsT]], Identity | None]
-        | None = None,
+        identity_resolver: Callable[[RunContext[AgentDepsT]], Identity | None] | None = None,
         include: list[str] | None = None,
         exclude: list[str] | None = None,
         toolset_id: str | None = None,
@@ -90,9 +89,7 @@ class ApcoreToolset(AbstractToolset[AgentDepsT]):
     def id(self) -> str | None:
         return self._toolset_id
 
-    async def get_tools(
-        self, ctx: RunContext[AgentDepsT]
-    ) -> dict[str, ToolsetTool[AgentDepsT]]:
+    async def get_tools(self, ctx: RunContext[AgentDepsT]) -> dict[str, ToolsetTool[AgentDepsT]]:
         """Convert all matching apcore modules into pydantic-ai tools."""
         tools: dict[str, ToolsetTool[AgentDepsT]] = {}
         validator = TypeAdapter(dict[str, Any]).validator
@@ -105,9 +102,7 @@ class ApcoreToolset(AbstractToolset[AgentDepsT]):
             if descriptor is None:
                 continue
 
-            tool_def = _descriptor_to_tool_def(
-                descriptor, self._tool_name(module_id, tools)
-            )
+            tool_def = _descriptor_to_tool_def(descriptor, self._tool_name(module_id, tools))
 
             tools[tool_def.name] = ToolsetTool(
                 toolset=self,
@@ -223,9 +218,7 @@ def _build_description(descriptor: ModuleDescriptor) -> str:
     return "\n\n".join(parts)
 
 
-def _descriptor_to_tool_def(
-    descriptor: ModuleDescriptor, tool_name: str
-) -> ToolDefinition:
+def _descriptor_to_tool_def(descriptor: ModuleDescriptor, tool_name: str) -> ToolDefinition:
     """Convert an apcore ModuleDescriptor to a pydantic-ai ToolDefinition."""
     annotations = descriptor.annotations
 

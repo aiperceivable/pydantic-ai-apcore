@@ -32,9 +32,7 @@ def demo(monkeypatch: pytest.MonkeyPatch):
     toolset = demo_app.ApcoreToolset(
         client.registry,
         client.executor,
-        identity_resolver=lambda ctx: Identity(
-            id=ctx.deps.caller_id, type="ai", roles=ctx.deps.roles
-        ),
+        identity_resolver=lambda ctx: Identity(id=ctx.deps.caller_id, type="ai", roles=ctx.deps.roles),
     )
     ops = demo_app.AgentIdentity(caller_id="agent.ops", roles=("data_admin",))
     return demo_app, toolset, ops

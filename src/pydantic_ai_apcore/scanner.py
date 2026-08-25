@@ -100,9 +100,7 @@ class PydanticAIScanner(BaseScanner):
 
             function = getattr(tool, "function", None)
             if function is None:
-                self._skipped.append(
-                    SkippedTool(name=name, reason="no underlying function")
-                )
+                self._skipped.append(SkippedTool(name=name, reason="no underlying function"))
                 continue
 
             module_id = f"{self._prefix}{name}"
@@ -128,15 +126,10 @@ class PydanticAIScanner(BaseScanner):
                 "importable, so writers that resolve targets by path cannot "
                 "reach it."
             )
-        missing = [
-            field
-            for field, spec in schema.get("properties", {}).items()
-            if not spec.get("description")
-        ]
+        missing = [field for field, spec in schema.get("properties", {}).items() if not spec.get("description")]
         if missing:
             warnings.append(
-                f"{name} has no description for: {', '.join(missing)}. "
-                "A model sees only the parameter names."
+                f"{name} has no description for: {', '.join(missing)}. A model sees only the parameter names."
             )
 
         annotations: dict[str, Any] = {}
@@ -216,9 +209,7 @@ def register_toolset(
         )(function)
         registered.append(scanned_module.module_id)
 
-    return ScanResult(
-        registered=registered, skipped=scanner.skipped, modules=list(scanned)
-    )
+    return ScanResult(registered=registered, skipped=scanner.skipped, modules=list(scanned))
 
 
 def _annotations_dict(scanned_module: ScannedModule) -> dict[str, Any] | None:
