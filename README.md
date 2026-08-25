@@ -34,11 +34,12 @@ not the earliest version that happens to expose the APIs used here:
 |---|---|---|---|
 | apcore | 0.26.0 – 0.27.0 | 0.12.0 | the code itself works from 0.13.0, where `cacheable` / `paginated` arrive; the effective floor is raised to 0.26.0 by `apcore-toolkit` |
 | apcore-toolkit | 0.6.0 – 0.10.1 | — | floor kept at 0.10.0 to match the other `*-apcore` integrations, so installing several together cannot conflict |
-| pydantic-ai-slim | 1.32.0 – 2.33.0 | 1.31.0 | earlier releases pin an OpenTelemetry API that no longer resolves |
+| pydantic-ai-slim | 1.32.0 – 2.34.0 | 1.31.0 | earlier releases pin an OpenTelemetry API that no longer resolves |
 
 `ToolDefinition.sequential` needs 1.0.10 and `kind="unapproved"` needs 1.0.0, so
-the pydantic-ai floor is set by installability rather than by API surface. The
-2.x line is supported — no changes were required for it.
+the pydantic-ai floor is set by installability rather than by API surface.
+Both major lines are verified: the test suite passes on 1.32.0, 1.66.0,
+2.0.0, and 2.34.0.
 
 ## Installation
 
@@ -195,7 +196,6 @@ from pydantic_ai_apcore import register_toolset
 
 toolset = FunctionToolset()
 
-@toolset.tool
 def send_invoice(customer_id: str, amount: float) -> dict:
     """Send an invoice to a customer.
 
@@ -205,10 +205,18 @@ def send_invoice(customer_id: str, amount: float) -> dict:
     """
     return {"customer_id": customer_id, "sent": True}
 
+toolset.add_function(send_invoice, takes_ctx=False)
+
 registry = Registry()
 result = register_toolset(toolset, registry, prefix="billing.")
 # result.registered -> ["billing.send_invoice"]
 ```
+
+> `add_function(takes_ctx=...)` behaves identically on pydantic-ai 1.x and 2.x.
+> The `.tool` decorator does not: 2.0 changed it to require a `RunContext` first
+> parameter and added `.tool_plain` for functions that take none. Either
+> decorator works if you only target one major version; `add_function` works on
+> both.
 
 Schemas are derived by apcore from each function's signature and docstring, the
 same way a hand-written module would be, so the results are not second-class. A

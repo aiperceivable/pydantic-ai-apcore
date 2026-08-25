@@ -36,7 +36,6 @@ def build_billing_tools(currency: str) -> FunctionToolset:
     """
     toolset = FunctionToolset()
 
-    @toolset.tool
     def send_invoice(customer_id: str, amount: float) -> dict:
         """Send an invoice to a customer.
 
@@ -46,7 +45,6 @@ def build_billing_tools(currency: str) -> FunctionToolset:
         """
         return {"customer_id": customer_id, "amount": amount, "currency": currency}
 
-    @toolset.tool(requires_approval=True)
     def refund(payment_id: str, confirmed: bool = False) -> dict:
         """Refund a payment in full.
 
@@ -56,7 +54,6 @@ def build_billing_tools(currency: str) -> FunctionToolset:
         """
         return {"payment_id": payment_id, "refunded": True, "currency": currency}
 
-    @toolset.tool
     def wire_transfer(account: str, amount: float) -> dict:
         """Move money to an external account.
 
@@ -66,11 +63,9 @@ def build_billing_tools(currency: str) -> FunctionToolset:
         """
         return {"account": account, "sent": amount}
 
-    @toolset.tool
     def lookup(q: str, limit: int) -> dict:  # no docstring on purpose
         return {"q": q, "limit": limit}
 
-    @toolset.tool
     def recent_activity(ctx: RunContext, customer_id: str) -> dict:
         """Needs the agent run context, so apcore cannot invoke it.
 
@@ -78,6 +73,15 @@ def build_billing_tools(currency: str) -> FunctionToolset:
             customer_id: Whose activity to read.
         """
         return {"customer_id": customer_id}
+
+    # add_function(takes_ctx=...) works the same on pydantic-ai 1.x and 2.x.
+    # The .tool decorator does not: 2.0 changed it to require a RunContext first
+    # parameter, and added .tool_plain for functions that take none.
+    toolset.add_function(send_invoice, takes_ctx=False)
+    toolset.add_function(refund, takes_ctx=False, requires_approval=True)
+    toolset.add_function(wire_transfer, takes_ctx=False)
+    toolset.add_function(lookup, takes_ctx=False)
+    toolset.add_function(recent_activity, takes_ctx=True)
 
     return toolset
 

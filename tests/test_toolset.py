@@ -379,7 +379,6 @@ class TestRegisterToolset:
     def _toolset(self) -> Any:
         ts = FunctionToolset()
 
-        @ts.tool
         def send_invoice(customer_id: str, amount: float) -> dict:
             """Send an invoice to a customer.
 
@@ -389,7 +388,6 @@ class TestRegisterToolset:
             """
             return {"customer_id": customer_id, "sent": True}
 
-        @ts.tool(requires_approval=True)
         def refund(payment_id: str) -> dict:
             """Refund a payment.
 
@@ -398,7 +396,6 @@ class TestRegisterToolset:
             """
             return {"payment_id": payment_id, "refunded": True}
 
-        @ts.tool
         def needs_ctx(ctx: RunContext, query: str) -> str:
             """Needs the run context.
 
@@ -407,6 +404,11 @@ class TestRegisterToolset:
             """
             return query
 
+        # add_function(takes_ctx=...) behaves the same on pydantic-ai 1.x and
+        # 2.x; the .tool decorator does not (2.0 made it require RunContext).
+        ts.add_function(send_invoice, takes_ctx=False)
+        ts.add_function(refund, takes_ctx=False, requires_approval=True)
+        ts.add_function(needs_ctx, takes_ctx=True)
         return ts
 
     def test_registers_plain_tools(self) -> None:
@@ -520,7 +522,6 @@ class TestScannerMetadataPipeline:
         """Tools defined inside a scope, closing over a dependency."""
         ts = FunctionToolset()
 
-        @ts.tool
         def convert(amount: float) -> dict:
             """Convert an amount.
 
@@ -529,10 +530,11 @@ class TestScannerMetadataPipeline:
             """
             return {"converted": amount * rate}
 
-        @ts.tool
         def undocumented(x: str, y: int) -> dict:
             return {"x": x}
 
+        ts.add_function(convert, takes_ctx=False)
+        ts.add_function(undocumented, takes_ctx=False)
         return ts
 
     def test_scan_yields_scanned_modules(self) -> None:
