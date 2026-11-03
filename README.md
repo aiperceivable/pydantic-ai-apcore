@@ -23,17 +23,17 @@ Works in both directions:
 ## Requirements
 
 - Python >= 3.10
-- apcore >= 0.26.0
-- apcore-toolkit >= 0.10.0
+- apcore >= 0.32.2
+- apcore-toolkit >= 0.14.1
 - pydantic-ai-slim >= 1.32.0
 
-Both lower bounds are the earliest versions the test suite actually passes on,
-not the earliest version that happens to expose the APIs used here:
+The apcore floors track the aligned 0.32.2 / 0.14.1 release train and match the
+other `*-apcore` integrations, so installing several together cannot conflict:
 
 | | Verified | Fails on | Why |
 |---|---|---|---|
-| apcore | 0.26.0 – 0.27.0 | 0.12.0 | the code itself works from 0.13.0, where `cacheable` / `paginated` arrive; the effective floor is raised to 0.26.0 by `apcore-toolkit` |
-| apcore-toolkit | 0.6.0 – 0.10.1 | — | floor kept at 0.10.0 to match the other `*-apcore` integrations, so installing several together cannot conflict |
+| apcore | 0.32.2 | — | floor raised by `apcore-toolkit` 0.14.1 and `apcore-mcp` 0.23.3 |
+| apcore-toolkit | 0.14.1 | — | aligned with the other `*-apcore` integrations |
 | pydantic-ai-slim | 1.32.0 – 2.34.0 | 1.31.0 | earlier releases pin an OpenTelemetry API that no longer resolves |
 
 `ToolDefinition.sequential` needs 1.0.10 and `kind="unapproved"` needs 1.0.0, so

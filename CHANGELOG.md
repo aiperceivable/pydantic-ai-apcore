@@ -11,6 +11,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.1.1] - 2026-11-03
+
+Dependency uplift to the aligned apcore 0.32.2 / apcore-toolkit 0.14.1 /
+apcore-mcp 0.23.3 / apcore-cli 0.12.6 train. All 57 tests pass.
+
+### Changed
+
+- **Dependency floors raised** — `apcore >= 0.32.2`,
+  `apcore-toolkit >= 0.14.1`, `apcore-mcp >= 0.23.3` (the `mcp` extra), and
+  `apcore-cli >= 0.12.6` (the `cli` extra). These match the versions the other
+  `*-apcore` integrations declare for the same release train, so installing
+  several together cannot conflict.
+
+### Fixed
+
+- **`serve_cli()` now builds its CLI through `apcore_cli.create_cli()`.** It
+  previously looked for a top-level `main` / `run` / `serve` / `cli` entry
+  point on `apcore_cli`; none exists (the `cli` attribute is the *module*
+  `apcore_cli.cli`, not a callable), so the helper raised `RuntimeError` on
+  every call. It now passes the registry — and the executor, when one is given
+  — to `create_cli()` and invokes the resulting Click group, mirroring how
+  `apcore-cli`'s own entry point runs. A filesystem path is accepted too and
+  forwarded as `extensions_dir`.
+
+### Notes on dependency floors
+
+`apcore` 0.32 added canonical name helpers, governance projection, and the
+`discoverable` / `extra` annotations; `apcore-toolkit` 0.14 tightened binding
+validation; `apcore-mcp` 0.23 isolated stdio diagnostics. None of these change
+the APIs this integration consumes — the suite passes against the new floors
+with no further source changes beyond the `serve_cli()` fix above.
+`apcore-a2a` 0.8.5 is not a dependency of this package (A2A is served by
+`apcore-a2a` directly), so that release required no change here.
+
+---
+
 ## [0.1.0] - 2026-08-25
 
 Initial release. pydantic-ai integration for the apcore ecosystem, built

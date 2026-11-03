@@ -11,6 +11,7 @@ behind extras so the base install stays minimal:
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
 __all__ = ["serve_cli", "serve_mcp"]
@@ -36,21 +37,40 @@ def serve_mcp(registry_or_executor: Any, **kwargs: Any) -> Any:
 
 
 def serve_cli(registry_or_executor: Any, **kwargs: Any) -> Any:
-    """Expose the given registry or executor as a command-line interface.
+    """Run the given registry or executor as a command-line interface.
 
-    Forwards to the apcore-cli entry point.
+    Builds a Click application with :func:`apcore_cli.create_cli` and invokes
+    it, so the modules reach the terminal the same way a standalone
+    ``apcore-cli`` installation would. A path may be given instead, in which
+    case apcore-cli's normal filesystem discovery applies.
+
+    Extra keyword arguments are forwarded to ``create_cli`` (``prog_name``,
+    ``description``, ``expose``, ``acl``, and so on). To build the Click group
+    without running it, call ``apcore_cli.create_cli`` directly.
 
     Raises:
         ImportError: If the ``cli`` extra is not installed.
+        TypeError: If ``registry_or_executor`` is not a Registry, Executor, or
+            filesystem path.
     """
     try:
-        import apcore_cli
+        from apcore import Executor, Registry
+        from apcore_cli import create_cli
     except ImportError as exc:  # pragma: no cover - exercised via the extra
         raise ImportError(_MISSING.format(surface="CLI", extra="cli")) from exc
 
-    for entry_point in ("main", "run", "serve", "cli"):
-        candidate = getattr(apcore_cli, entry_point, None)
-        if callable(candidate):
-            return candidate(registry_or_executor, **kwargs)
+    if isinstance(registry_or_executor, Executor):
+        kwargs.setdefault("executor", registry_or_executor)
+        kwargs.setdefault("registry", registry_or_executor.registry)
+    elif isinstance(registry_or_executor, Registry):
+        kwargs.setdefault("registry", registry_or_executor)
+    elif isinstance(registry_or_executor, (str, Path)):
+        kwargs.setdefault("extensions_dir", str(registry_or_executor))
+    else:
+        raise TypeError(
+            "serve_cli() takes an apcore Registry, an apcore Executor, or an "
+            f"extensions directory path; got {type(registry_or_executor).__name__}."
+        )
 
-    raise RuntimeError("apcore-cli is installed but exposes no recognised entry point; call it directly instead.")
+    cli = create_cli(**kwargs)
+    return cli(standalone_mode=True)

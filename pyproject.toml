@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "pydantic-ai-apcore"
-version = "0.1.0"
+version = "0.1.1"
 description = "apcore integration for pydantic-ai: governed modules as agent tools, and agent tools as governed modules"
 requires-python = ">=3.10"
 readme = "README.md"
@@ -29,14 +29,14 @@ keywords = [
     "integration",
 ]
 dependencies = [
-    "apcore>=0.26.0",
-    "apcore-toolkit>=0.10.0",
+    "apcore>=0.32.2",
+    "apcore-toolkit>=0.14.1",
     "pydantic-ai-slim>=1.32.0",
 ]
 
 [project.optional-dependencies]
-mcp = ["apcore-mcp>=0.17.2"]
-cli = ["apcore-cli>=0.10.3"]
+mcp = ["apcore-mcp>=0.23.3"]
+cli = ["apcore-cli>=0.12.6"]
 all = ["pydantic-ai-apcore[mcp,cli]"]
 dev = [
     "apdev[dev]>=0.2.1",

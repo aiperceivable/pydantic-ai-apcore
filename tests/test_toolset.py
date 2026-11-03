@@ -514,6 +514,75 @@ class TestSurfaceHelpers:
 
         assert "pydantic-ai-apcore[mcp]" in str(exc.value)
 
+    def test_serve_cli_forwards_a_registry_and_runs(self, monkeypatch) -> None:
+        pytest.importorskip("apcore_cli")
+
+        from pydantic_ai_apcore import surfaces
+
+        calls: dict[str, Any] = {}
+
+        class _FakeGroup:
+            def __call__(self, *, standalone_mode: bool = True) -> str:
+                calls["standalone_mode"] = standalone_mode
+                return "ran"
+
+        def fake_create_cli(**kwargs: Any) -> Any:
+            calls["kwargs"] = kwargs
+            return _FakeGroup()
+
+        monkeypatch.setattr("apcore_cli.create_cli", fake_create_cli)
+
+        registry = Registry()
+        assert surfaces.serve_cli(registry, prog_name="demo") == "ran"
+        assert calls["kwargs"]["registry"] is registry
+        assert calls["kwargs"]["prog_name"] == "demo"
+        assert calls["standalone_mode"] is True
+
+    def test_serve_cli_forwards_an_executor_with_its_registry(self, monkeypatch) -> None:
+        pytest.importorskip("apcore_cli")
+
+        from pydantic_ai_apcore import surfaces
+
+        calls: dict[str, Any] = {}
+
+        def fake_create_cli(**kwargs: Any) -> Any:
+            calls["kwargs"] = kwargs
+            return lambda *, standalone_mode=True: None
+
+        monkeypatch.setattr("apcore_cli.create_cli", fake_create_cli)
+
+        registry = Registry()
+        executor = Executor(registry=registry)
+        surfaces.serve_cli(executor)
+
+        assert calls["kwargs"]["registry"] is registry
+        assert calls["kwargs"]["executor"] is executor
+
+    def test_serve_cli_accepts_an_extensions_path(self, monkeypatch, tmp_path) -> None:
+        pytest.importorskip("apcore_cli")
+
+        from pydantic_ai_apcore import surfaces
+
+        calls: dict[str, Any] = {}
+
+        def fake_create_cli(**kwargs: Any) -> Any:
+            calls["kwargs"] = kwargs
+            return lambda *, standalone_mode=True: None
+
+        monkeypatch.setattr("apcore_cli.create_cli", fake_create_cli)
+
+        surfaces.serve_cli(tmp_path)
+
+        assert calls["kwargs"]["extensions_dir"] == str(tmp_path)
+
+    def test_serve_cli_rejects_unknown_targets(self) -> None:
+        pytest.importorskip("apcore_cli")
+
+        from pydantic_ai_apcore import surfaces
+
+        with pytest.raises(TypeError):
+            surfaces.serve_cli(object())
+
 
 class TestScannerMetadataPipeline:
     """Scanning produces ScannedModule, so the toolkit pipeline applies."""
