@@ -25,12 +25,17 @@ register on equal footing.
 
 from __future__ import annotations
 
+import logging
+import math
+from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any, Callable
 
 from apcore import Registry, module
 from apcore_toolkit import BaseScanner, Enhancer, ScannedModule
 from pydantic_ai.toolsets.function import FunctionToolset
+
+logger = logging.getLogger("pydantic_ai_apcore")
 
 __all__ = ["PydanticAIScanner", "ScanResult", "SkippedTool", "register_toolset"]
 
@@ -68,6 +73,7 @@ class PydanticAIScanner(BaseScanner):
         self._version = version
         self._tags = tags or []
         self._callables: dict[str, Callable[..., Any]] = {}
+        self._resources: dict[str, dict[str, Any]] = {}
         self._skipped: list[SkippedTool] = []
 
     def get_source_name(self) -> str:
@@ -82,9 +88,15 @@ class PydanticAIScanner(BaseScanner):
         """The function behind a scanned module, held from the scan itself."""
         return self._callables.get(module_id)
 
+    def resources_for(self, module_id: str) -> dict[str, Any] | None:
+        """Resources derived from the tool's own pydantic-ai timeout, if any."""
+        resources = self._resources.get(module_id)
+        return dict(resources) if resources is not None else None
+
     def scan(self, **kwargs: Any) -> list[ScannedModule]:
         """Convert every eligible tool into a ``ScannedModule``."""
         self._callables.clear()
+        self._resources.clear()
         self._skipped.clear()
         scanned: list[ScannedModule] = []
 
@@ -105,6 +117,9 @@ class PydanticAIScanner(BaseScanner):
 
             module_id = f"{self._prefix}{name}"
             self._callables[module_id] = function
+            resources = _resources_from_tool_timeout(tool)
+            if resources is not None:
+                self._resources[module_id] = resources
             scanned.append(self._to_scanned_module(module_id, name, tool, function))
 
         return self.deduplicate_ids(scanned)
@@ -149,6 +164,44 @@ class PydanticAIScanner(BaseScanner):
         )
 
 
+def _resources_from_tool_timeout(tool: Any) -> dict[str, Any] | None:
+    """Translate a pydantic-ai tool timeout (seconds) into apcore resources.
+
+    apcore reads ``resources["timeout"]`` in milliseconds. pydantic-ai exposes
+    the per-tool timeout on both ``Tool`` and ``ToolDefinition`` depending on
+    the release; reading it through ``getattr`` keeps this compatible with
+    versions that predate the field.
+    """
+    timeout = getattr(tool, "timeout", None)
+    if timeout is None:
+        tool_def = getattr(tool, "tool_def", None)
+        timeout = getattr(tool_def, "timeout", None)
+    if isinstance(timeout, bool) or not isinstance(timeout, (int, float)):
+        return None
+    seconds = float(timeout)
+    if not math.isfinite(seconds) or seconds <= 0:
+        return None
+    milliseconds = int(round(seconds * 1000))
+    return {"timeout": milliseconds} if milliseconds > 0 else None
+
+
+def _explicit_resources(
+    resources: Mapping[str, Mapping[str, Any]],
+    module_id: str,
+    tool_name: str,
+) -> tuple[dict[str, Any] | None, set[str]]:
+    """Resolve an explicit resources block by module ID first, then tool name.
+
+    Every alias that names this tool counts as used, so specifying both the
+    bare name and the full module ID does not produce a spurious "unused key"
+    warning for the shadowed alias.
+    """
+    keys = [key for key in (module_id, tool_name) if key in resources]
+    if not keys:
+        return None, set()
+    return dict(resources[keys[0]]), set(keys)
+
+
 def register_toolset(
     toolset: FunctionToolset,
     registry: Registry,
@@ -157,6 +210,7 @@ def register_toolset(
     version: str = "1.0.0",
     tags: list[str] | None = None,
     enhancers: list[Enhancer] | None = None,
+    resources: Mapping[str, Mapping[str, Any]] | None = None,
 ) -> ScanResult:
     """Register every eligible tool of ``toolset`` as an apcore module.
 
@@ -180,6 +234,12 @@ def register_toolset(
         enhancers: Metadata enhancers applied to the scan before registration,
             e.g. ``apcore_toolkit.AIEnhancer`` to fill in missing descriptions.
             Each tool's own gaps are listed in ``ScannedModule.warnings``.
+        resources: Optional per-tool apcore ``resources`` blocks keyed by tool
+            name or fully-prefixed module ID (the module ID wins when both are
+            present). A pydantic-ai tool's own ``timeout`` (seconds) is
+            translated to ``resources={"timeout": milliseconds}``
+            automatically; an explicit block is merged over that derived value.
+            Unknown keys are reported with a warning.
 
     Returns:
         A :class:`ScanResult` naming what was registered, what was skipped, and
@@ -192,11 +252,27 @@ def register_toolset(
     for enhancer in enhancers or []:
         scanned = enhancer.enhance(scanned)
 
+    explicit_resources = dict(resources or {})
+    used_resource_keys: set[str] = set()
     registered: list[str] = []
     for scanned_module in scanned:
         function = scanner.callable_for(scanned_module.module_id)
         if function is None:  # pragma: no cover - only if an enhancer renames one
             continue
+
+        tool_name = (
+            scanned_module.module_id[len(prefix) :]
+            if prefix and scanned_module.module_id.startswith(prefix)
+            else scanned_module.module_id
+        )
+        explicit, matched_keys = _explicit_resources(
+            explicit_resources,
+            scanned_module.module_id,
+            tool_name,
+        )
+        used_resource_keys.update(matched_keys)
+        derived = scanner.resources_for(scanned_module.module_id) or {}
+        module_resources = {**derived, **explicit} if explicit is not None else derived
 
         module(
             id=scanned_module.module_id,
@@ -205,9 +281,17 @@ def register_toolset(
             annotations=_annotations_dict(scanned_module),
             tags=scanned_module.tags or None,
             version=scanned_module.version,
+            resources=module_resources or None,
             registry=registry,
         )(function)
         registered.append(scanned_module.module_id)
+
+    unused = set(explicit_resources) - used_resource_keys
+    if unused:
+        logger.warning(
+            "register_toolset: resources entries did not match a registered tool: %s",
+            ", ".join(sorted(unused)),
+        )
 
     return ScanResult(registered=registered, skipped=scanner.skipped, modules=list(scanned))
 

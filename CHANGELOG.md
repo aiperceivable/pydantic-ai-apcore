@@ -11,6 +11,56 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.2.0] - 2026-11-23
+
+Reverse registration now preserves per-tool execution budgets. All 62 tests
+pass.
+
+### Added
+
+- **`register_toolset(resources=...)`** accepts per-tool apcore `resources`
+  blocks keyed by tool name or fully-prefixed module ID. The full module ID is
+  matched first, and the explicit block is merged over any derived value.
+  Entries that match no registered tool emit a warning instead of being
+  silently ignored.
+- **A pydantic-ai tool's `timeout` (seconds) is translated automatically** to
+  apcore's millisecond `resources["timeout"]` when the tool is reverse
+  registered. A `ToolDefinition`/`Tool` timeout of `2.5`, for example, becomes
+  `{"timeout": 2500}`, so the governed module cannot outlive the budget the
+  agent already declared. The lookup uses `getattr`, so pydantic-ai releases
+  without the field remain compatible.
+
+### Notes
+
+- Tool callables and schemas are unchanged; this only affects the resources
+  passed to `apcore.module()`.
+
+---
+
+## [0.1.2] - 2026-11-23
+
+Dependency uplift to the aligned apcore 0.33.0 / apcore-toolkit 0.15.0 /
+apcore-mcp 0.23.4 / apcore-cli 0.14.1 train. All 57 tests pass.
+
+### Changed
+
+- **Dependency floors raised** — `apcore >= 0.33.0` (was `>= 0.32.2`),
+  `apcore-toolkit >= 0.15.0` (was `>= 0.14.1`), `apcore-mcp >= 0.23.4`
+  (the `mcp` extra, was `>= 0.23.3`), and `apcore-cli >= 0.14.1`
+  (the `cli` extra, was `>= 0.12.6`).
+- The CI `minimum-versions` job now pins the same floors instead of the
+  previous 0.32.2 / 0.14.1 / 0.23.3 / 0.12.6 set, and the README dependency
+  table is updated to match.
+
+### Notes
+
+- No code change was required for apcore 0.33.0's `resources` block and
+  `MODULE_TIMEOUT` retryability change, or for apcore-toolkit 0.15.0's opt-in
+  effective-parameter OpenAPI scanning: this integration uses registry and
+  executor surfaces whose signatures are unchanged.
+
+---
+
 ## [0.1.1] - 2026-11-03
 
 Dependency uplift to the aligned apcore 0.32.2 / apcore-toolkit 0.14.1 /
@@ -117,4 +167,3 @@ not the earliest version that happens to expose the APIs used here:
   1.0.10, but releases before 1.32.0 pin an OpenTelemetry API that no longer
   resolves. Both major lines are verified — the suite passes on 1.32.0,
   1.66.0, 2.0.0, and 2.34.0.
-

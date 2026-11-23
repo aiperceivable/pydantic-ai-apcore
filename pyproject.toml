@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "pydantic-ai-apcore"
-version = "0.1.2"
+version = "0.2.0"
 description = "apcore integration for pydantic-ai: governed modules as agent tools, and agent tools as governed modules"
 requires-python = ">=3.10"
 readme = "README.md"

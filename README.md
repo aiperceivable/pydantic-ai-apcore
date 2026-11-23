@@ -23,17 +23,17 @@ Works in both directions:
 ## Requirements
 
 - Python >= 3.10
-- apcore >= 0.32.2
-- apcore-toolkit >= 0.14.1
+- apcore >= 0.33.0
+- apcore-toolkit >= 0.15.0
 - pydantic-ai-slim >= 1.32.0
 
-The apcore floors track the aligned 0.32.2 / 0.14.1 release train and match the
+The apcore floors track the aligned 0.33.0 / 0.15.0 release train and match the
 other `*-apcore` integrations, so installing several together cannot conflict:
 
 | | Verified | Fails on | Why |
 |---|---|---|---|
-| apcore | 0.32.2 | — | floor raised by `apcore-toolkit` 0.14.1 and `apcore-mcp` 0.23.3 |
-| apcore-toolkit | 0.14.1 | — | aligned with the other `*-apcore` integrations |
+| apcore | 0.33.0 | — | floor raised by `apcore-toolkit` 0.15.0 and `apcore-mcp` 0.23.4 |
+| apcore-toolkit | 0.15.0 | — | aligned with the other `*-apcore` integrations |
 | pydantic-ai-slim | 1.32.0 – 2.34.0 | 1.31.0 | earlier releases pin an OpenTelemetry API that no longer resolves |
 
 `ToolDefinition.sequential` needs 1.0.10 and `kind="unapproved"` needs 1.0.0, so
@@ -222,6 +222,39 @@ Schemas are derived by apcore from each function's signature and docstring, the
 same way a hand-written module would be, so the results are not second-class. A
 tool's `requires_approval` flag carries over to the apcore annotation of the
 same name — approval semantics survive the trip in both directions.
+
+#### Per-tool timeouts and resources
+
+A pydantic-ai tool's own `timeout` (seconds) carries over to apcore's
+millisecond execution budget, so the reverse-registered module cannot run past
+the limit the agent already declared:
+
+```python
+toolset.add_function(send_invoice, takes_ctx=False, timeout=30)
+register_toolset(toolset, registry, prefix="billing.")
+
+# registry.get("billing.send_invoice").resources == {"timeout": 30000}
+```
+
+Use the `resources=` argument to override or add apcore resources per tool.
+Keys are matched by full module ID first, then by bare tool name; the explicit
+block is merged over the timeout derived from the pydantic-ai tool, so
+specifying only extra keys keeps the translated timeout:
+
+```python
+register_toolset(
+    toolset,
+    registry,
+    prefix="billing.",
+    resources={
+        "send_invoice": {"timeout": 120_000},   # tool name
+        "billing.refund": {"timeout": 5_000},   # full module ID wins
+    },
+)
+```
+
+Keys that match no registered tool produce a warning rather than being silently
+ignored.
 
 Tools that take a `RunContext` are **skipped**, and reported in
 `result.skipped` with the reason. apcore invokes a module without a pydantic-ai

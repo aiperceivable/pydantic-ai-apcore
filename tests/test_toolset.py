@@ -458,6 +458,94 @@ class TestRegisterToolset:
 
         assert registry.get_definition("refund").annotations.requires_approval is True
 
+    def test_explicit_resources_by_tool_name(self) -> None:
+        from pydantic_ai_apcore import register_toolset
+
+        registry = Registry()
+        register_toolset(
+            self._toolset(),
+            registry,
+            resources={"send_invoice": {"timeout": 1_500}},
+        )
+
+        assert registry.get("send_invoice").resources == {"timeout": 1_500}
+        assert registry.get("refund").resources is None
+
+    def test_explicit_resources_by_module_id_take_precedence(self) -> None:
+        from pydantic_ai_apcore import register_toolset
+
+        registry = Registry()
+        register_toolset(
+            self._toolset(),
+            registry,
+            prefix="billing.",
+            resources={
+                "send_invoice": {"timeout": 1_500},
+                "billing.send_invoice": {"timeout": 2_500},
+            },
+        )
+
+        assert registry.get("billing.send_invoice").resources == {"timeout": 2_500}
+
+    def test_tool_timeout_is_translated_to_milliseconds(self) -> None:
+        from pydantic_ai_apcore import register_toolset
+
+        toolset = FunctionToolset()
+
+        def slow_lookup(query: str) -> dict:
+            """Look something up.
+
+            Args:
+                query: What to find.
+            """
+            return {"query": query}
+
+        toolset.add_function(slow_lookup, takes_ctx=False, timeout=2.5)
+
+        registry = Registry()
+        register_toolset(toolset, registry)
+
+        assert registry.get("slow_lookup").resources == {"timeout": 2_500}
+
+    def test_explicit_resources_override_derived_timeout(self) -> None:
+        from pydantic_ai_apcore import register_toolset
+
+        toolset = FunctionToolset()
+
+        def slow_lookup(query: str) -> dict:
+            """Look something up.
+
+            Args:
+                query: What to find.
+            """
+            return {"query": query}
+
+        toolset.add_function(slow_lookup, takes_ctx=False, timeout=2.5)
+
+        registry = Registry()
+        register_toolset(
+            toolset,
+            registry,
+            resources={"slow_lookup": {"timeout": 700}},
+        )
+
+        assert registry.get("slow_lookup").resources == {"timeout": 700}
+
+    def test_unused_resources_key_warns(self, caplog: pytest.LogCaptureFixture) -> None:
+        import logging
+
+        from pydantic_ai_apcore import register_toolset
+
+        with caplog.at_level(logging.WARNING):
+            register_toolset(
+                self._toolset(),
+                Registry(),
+                resources={"missing_tool": {"timeout": 1_000}},
+            )
+
+        assert "did not match a registered tool" in caplog.text
+        assert "missing_tool" in caplog.text
+
     def test_registered_tools_are_subject_to_acl(self) -> None:
         from apcore import ACL, ACLDeniedError, ACLRule
 
